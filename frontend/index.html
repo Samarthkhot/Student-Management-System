@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <button id="themeToggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+
+    <h2>Student Management System</h2>
+
+    <input type="hidden" id="selectedId">
+    <input type="text" id="name" placeholder="Student Name">
+    <input type="email" id="email" placeholder="Email">
+    <input type="text" id="course" placeholder="Course">
+
+    <div class="btn-group">
+        <button onclick="addStudent()">Add Student</button>
+        <button onclick="updateStudent()">Update Student</button>
+        <button onclick="toggleSort()" id="sortBtn">Sort A–Z</button>
+        <input type="text" id="search" placeholder="Search student..." onkeyup="searchStudents()">
+        <button onclick="loadStudents()">View Students</button>
+    </div>
+
+    <div id="alert"></div>
+
+
+    <ul id="list"></ul>
+
+    <div id="pagination">
+    <button onclick="prevPage()">Previous</button>
+    <span id="pageInfo"></span>
+    <button onclick="nextPage()">Next</button>
+    
+</div>
+
+
+</div>
+
+<script src="script.js"></script>
+</body>
+
+</html>
