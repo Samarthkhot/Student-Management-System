@@ -4,6 +4,25 @@ const recordsPerPage = 5;
 let isAscending = true;
 let studentsData = [];
 
+/* =====================================================
+   🔴 ORIGINAL BACKEND VERSION (COMMENTED – DO NOT DELETE)
+=====================================================
+
+fetch("http://localhost:3000/add-student", {...})
+fetch("http://localhost:3000/students")
+fetch(`http://localhost:3000/update/${id}`)
+fetch(`http://localhost:3000/delete/${id}`)
+
+Uncomment later when backend is deployed.
+
+===================================================== */
+
+
+/* =====================================================
+   🟢 PORTFOLIO DEMO VERSION (localStorage FAKE DB)
+===================================================== */
+
+
 /* ---------- ALERT FUNCTION ---------- */
 function showAlert(message, type) {
     const alertBox = document.getElementById("alert");
@@ -24,6 +43,13 @@ function isValidEmail(email) {
     return pattern.test(email);
 }
 
+/* ---------- LOAD STUDENTS (Fake DB) ---------- */
+function loadStudents() {
+    studentsData = JSON.parse(localStorage.getItem("students")) || [];
+    currentPage = 1;
+    displayStudents(studentsData);
+}
+
 /* ---------- ADD STUDENT ---------- */
 function addStudent() {
     const name = document.getElementById("name").value.trim();
@@ -40,34 +66,26 @@ function addStudent() {
         return;
     }
 
-    fetch("http://localhost:3000/add-student", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, course })
-    })
-    .then(res => res.text())
-    .then(data => {
-        showAlert(data, "success");
-        loadStudents();
+    const students = JSON.parse(localStorage.getItem("students")) || [];
 
-        // Clear form
-        document.getElementById("name").value = "";
-        document.getElementById("email").value = "";
-        document.getElementById("course").value = "";
-    });
+    const newStudent = {
+        id: Date.now(),
+        name,
+        email,
+        course
+    };
+
+    students.push(newStudent);
+    localStorage.setItem("students", JSON.stringify(students));
+
+    showAlert("Student added successfully", "success");
+
+    document.getElementById("name").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("course").value = "";
+
+    loadStudents();
 }
-
-/* ---------- LOAD STUDENTS ---------- */
-function loadStudents() {
-    fetch("http://localhost:3000/students")
-    .then(res => res.json())
-    .then(data => {
-        studentsData = data;
-        currentPage = 1;
-        displayStudents(data);
-    });
-}
-
 
 /* ---------- DISPLAY STUDENTS ---------- */
 function displayStudents(data) {
@@ -116,7 +134,6 @@ function prevPage() {
     }
 }
 
-
 /* ---------- EDIT STUDENT ---------- */
 function editStudent(id, name, email, course) {
     document.getElementById("selectedId").value = id;
@@ -124,7 +141,7 @@ function editStudent(id, name, email, course) {
     document.getElementById("email").value = email;
     document.getElementById("course").value = course;
 
-    showAlert("Editing student ID: " + id, "success");
+    showAlert("Editing student", "success");
 }
 
 /* ---------- UPDATE STUDENT ---------- */
@@ -139,43 +156,34 @@ function updateStudent() {
         return;
     }
 
-    if (name === "" || email === "" || course === "") {
-        showAlert("All fields are required", "error");
-        return;
-    }
+    let students = JSON.parse(localStorage.getItem("students")) || [];
 
-    if (!isValidEmail(email)) {
-        showAlert("Invalid email format", "error");
-        return;
-    }
-
-    fetch(`http://localhost:3000/update/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, course })
-    })
-    .then(res => res.text())
-    .then(data => {
-        showAlert(data, "success");
-        document.getElementById("selectedId").value = "";
-        loadStudents();
+    students = students.map(s => {
+        if (s.id == id) {
+            return { ...s, name, email, course };
+        }
+        return s;
     });
+
+    localStorage.setItem("students", JSON.stringify(students));
+    document.getElementById("selectedId").value = "";
+
+    showAlert("Student updated", "success");
+    loadStudents();
 }
 
 /* ---------- DELETE STUDENT ---------- */
 function deleteStudent(id) {
     const confirmDelete = confirm("Are you sure you want to delete this student?");
-
     if (!confirmDelete) return;
 
-    fetch(`http://localhost:3000/delete/${id}`, {
-        method: "DELETE"
-    })
-    .then(res => res.text())
-    .then(data => {
-        showAlert(data, "success");
-        loadStudents();
-    });
+    let students = JSON.parse(localStorage.getItem("students")) || [];
+    students = students.filter(s => s.id !== id);
+
+    localStorage.setItem("students", JSON.stringify(students));
+
+    showAlert("Student deleted", "success");
+    loadStudents();
 }
 
 /* ---------- SEARCH STUDENTS ---------- */
@@ -192,18 +200,17 @@ function searchStudents() {
     displayStudents(filtered);
 }
 
-
+/* ---------- THEME ---------- */
 function toggleTheme() {
     document.body.classList.toggle("dark");
 
     const btn = document.getElementById("themeToggle");
-    if (document.body.classList.contains("dark")) {
-        btn.innerText = "☀ Light Mode";
-    } else {
-        btn.innerText = "🌙 Dark Mode";
-    }
+    btn.innerText = document.body.classList.contains("dark")
+        ? "☀ Light Mode"
+        : "🌙 Dark Mode";
 }
 
+/* ---------- SORT ---------- */
 function toggleSort() {
     let sortedData = [...studentsData];
 
@@ -218,3 +225,6 @@ function toggleSort() {
     isAscending = !isAscending;
     displayStudents(sortedData);
 }
+
+/* ---------- INITIAL LOAD ---------- */
+loadStudents();
