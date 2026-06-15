@@ -1,45 +1,260 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Student Management System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPro - Student Management</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
-    <button id="themeToggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+<div class="app">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu"><i class="fas fa-bars"></i></button>
+            <div class="brand-icon"><i class="fas fa-graduation-cap"></i></div>
+            <span>EduPro</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" onclick="showTab('dashboard')">
+                <span class="nav-icon"><i class="fas fa-chart-pie"></i></span> Dashboard
+            </a>
+            <a href="#" class="nav-item" onclick="showTab('students')">
+                <span class="nav-icon"><i class="fas fa-users"></i></span> Students
+            </a>
+            <a href="#" class="nav-item" onclick="showTab('add')">
+                <span class="nav-icon"><i class="fas fa-user-plus"></i></span> Add Student
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button id="themeToggle" onclick="toggleTheme()"><i class="fas fa-moon"></i> Dark</button>
+        </div>
+    </aside>
 
-    <h2>Student Management System</h2>
+    <main class="main-content">
+        <header class="topbar">
+            <div class="topbar-left" id="topbarLeft">
+                <h1 id="pageTitle">Dashboard</h1>
+            </div>
+            <div class="topbar-actions">
+                <span class="student-count" id="headerCount"><i class="fas fa-user-graduate"></i> 0 students</span>
+                <button class="btn-icon" onclick="exportCSV()" title="Export CSV"><i class="fas fa-file-export"></i></button>
+            </div>
+        </header>
 
-    <input type="hidden" id="selectedId">
-    <input type="text" id="name" placeholder="Student Name">
-    <input type="email" id="email" placeholder="Email">
-    <input type="text" id="course" placeholder="Course">
+        <div class="content">
+            <!-- DASHBOARD TAB -->
+            <section id="tab-dashboard" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card stat-total" onclick="goToStudents()">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="statTotal">0</span>
+                            <span class="stat-label">Total Students</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-active" onclick="goToStudents('status','Active')">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="statActive">0</span>
+                            <span class="stat-label">Active</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-inactive" onclick="goToStudents('status','Inactive')">
+                        <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="statInactive">0</span>
+                            <span class="stat-label">Inactive</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-courses" onclick="goToStudents()">
+                        <div class="stat-icon"><i class="fas fa-book"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="statCourses">0</span>
+                            <span class="stat-label">Courses</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-graduated" onclick="goToStudents('status','Graduated')">
+                        <div class="stat-icon"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="statGraduated">0</span>
+                            <span class="stat-label">Graduated</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-gender" onclick="goToStudents()">
+                        <div class="stat-icon"><i class="fas fa-venus-mars"></i></div>
+                        <div class="stat-info stat-info-col">
+                            <div class="gender-item">
+                                <span class="gender-number" id="statGenderM">0</span>
+                                <span class="gender-label"><i class="fas fa-mars"></i> Male</span>
+                            </div>
+                            <div class="gender-item">
+                                <span class="gender-number" id="statGenderF">0</span>
+                                <span class="gender-label"><i class="fas fa-venus"></i> Female</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card recent-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-clock"></i> Recent Students</h3>
+                        <a href="#" onclick="showTab('students')">View All <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    <div class="card-body" id="recentList">
+                        <p class="empty-state"><i class="fas fa-inbox"></i> No students yet</p>
+                    </div>
+                </div>
+            </section>
 
-    <div class="btn-group">
-        <button onclick="addStudent()">Add Student</button>
-        <button onclick="updateStudent()">Update Student</button>
-        <button onclick="toggleSort()" id="sortBtn">Sort A–Z</button>
-        <input type="text" id="search" placeholder="Search student..." onkeyup="searchStudents()">
-        <button onclick="loadStudents()">View Students</button>
-    </div>
+            <!-- STUDENTS TAB -->
+            <section id="tab-students" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="filter-bar">
+                            <div class="search-wrapper">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="searchInput" placeholder="Search by name, email, course..." oninput="filterStudents()">
+                            </div>
+                            <select id="filterCourse" onchange="filterStudents()">
+                                <option value="">All Courses</option>
+                            </select>
+                            <select id="filterStatus" onchange="filterStudents()">
+                                <option value="">All Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Graduated">Graduated</option>
+                            </select>
+                            <button class="btn-danger" id="bulkDeleteBtn" onclick="bulkDelete()" disabled><i class="fas fa-trash"></i> Delete Selected</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-wrapper">
+                            <table id="studentTable">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                                        <th onclick="sortBy('name')" class="sortable">Name <i class="fas fa-sort"></i></th>
+                                        <th onclick="sortBy('email')" class="sortable">Email <i class="fas fa-sort"></i></th>
+                                        <th onclick="sortBy('course')" class="sortable">Course <i class="fas fa-sort"></i></th>
+                                        <th onclick="sortBy('status')" class="sortable">Status <i class="fas fa-sort"></i></th>
+                                        <th onclick="sortBy('enrollmentDate')" class="sortable">Enrolled <i class="fas fa-sort"></i></th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-bar">
+                            <button onclick="prevPage()" class="btn-page"><i class="fas fa-chevron-left"></i> Prev</button>
+                            <span id="pageInfo"><i class="fas fa-file"></i> Page 1 of 1</span>
+                            <button onclick="nextPage()" class="btn-page">Next <i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-    <div id="alert"></div>
-
-
-    <ul id="list"></ul>
-
-    <div id="pagination">
-    <button onclick="prevPage()">Previous</button>
-    <span id="pageInfo"></span>
-    <button onclick="nextPage()">Next</button>
-    
+            <!-- ADD STUDENT TAB -->
+            <section id="tab-add" class="tab-content">
+                <div class="card form-card">
+                    <div class="card-header">
+                        <h3><span id="formTitle"><i class="fas fa-user-plus"></i> Add New Student</span></h3>
+                    </div>
+                    <div class="card-body">
+                        <input type="hidden" id="selectedId">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-user"></i> Full Name</label>
+                                <input type="text" id="name" placeholder="Enter full name">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-envelope"></i> Email Address</label>
+                                <input type="email" id="email" placeholder="Enter email">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-phone"></i> Phone Number</label>
+                                <input type="tel" id="phone" placeholder="Enter phone number">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-book"></i> Course / Program</label>
+                                <input type="text" id="course" placeholder="Enter course name">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-venus-mars"></i> Gender</label>
+                                <select id="gender">
+                                    <option value="">Select gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-calendar"></i> Date of Birth</label>
+                                <input type="date" id="dob">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-calendar-check"></i> Enrollment Date</label>
+                                <input type="date" id="enrollmentDate">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-tag"></i> Status</label>
+                                <select id="status">
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="Graduated">Graduated</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Address</label>
+                            <textarea id="address" placeholder="Enter address" rows="2"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-primary" onclick="addStudent()" id="formSubmitBtn"><i class="fas fa-save"></i> Add Student</button>
+                            <button class="btn-secondary" onclick="resetForm()"><i class="fas fa-undo"></i> Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
 </div>
 
+<div id="toast"></div>
 
+<div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="modalTitle"><i class="fas fa-exclamation-triangle"></i> Confirm</h3>
+            <button class="modal-close" onclick="closeModal()"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <p id="modalMessage">Are you sure?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal()"><i class="fas fa-ban"></i> Cancel</button>
+            <button class="btn-danger" id="modalConfirmBtn" onclick="modalConfirm()"><i class="fas fa-trash"></i> Delete</button>
+        </div>
+    </div>
+</div>
+
+<div id="detailModalOverlay" class="modal-overlay" onclick="closeDetailModal(event)">
+    <div class="modal modal-lg" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="detailModalTitle"><i class="fas fa-user"></i> Student Details</h3>
+            <button class="modal-close" onclick="closeDetailModal()"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body" id="detailModalBody"></div>
+    </div>
 </div>
 
 <script src="script.js"></script>
 </body>
-
 </html>
