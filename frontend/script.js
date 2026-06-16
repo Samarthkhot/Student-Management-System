@@ -214,33 +214,33 @@ function getAvatarColor(name) {
 
 /* ─── CORE DATA ─── */
 async function loadStudents() {
-    if (useBackend) {
-        try {
-            studentsData = await apiGet('/students');
-            studentsData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
-            if (studentsData.length === 0) {
-                for (const s of getSeedData()) {
-                    await apiPost('/add-student', {
-                        name: s.name, email: s.email, phone: s.phone, course: s.course,
-                        gender: s.gender, dob: s.dob, enrollmentDate: s.enrollmentDate,
-                        status: s.status, address: s.address
-                    });
-                }
-                studentsData = await apiGet('/students');
-                studentsData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
-            }
-            saveToStorage();
-        } catch (e) {
-            console.warn('Backend unavailable, using localStorage');
-            useBackend = false;
-            loadFromStorage();
-        }
-    } else {
-        loadFromStorage();
-    }
+    loadFromStorage();
     currentPage = 1;
     selectedIds.clear();
     updateUI();
+
+    try {
+        const serverData = await apiGet('/students');
+        serverData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
+        if (serverData.length === 0) {
+            for (const s of getSeedData()) {
+                await apiPost('/add-student', {
+                    name: s.name, email: s.email, phone: s.phone, course: s.course,
+                    gender: s.gender, dob: s.dob, enrollmentDate: s.enrollmentDate,
+                    status: s.status, address: s.address
+                });
+            }
+            studentsData = await apiGet('/students');
+            studentsData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
+        } else {
+            studentsData = serverData;
+        }
+        saveToStorage();
+        updateUI();
+    } catch (e) {
+        console.warn('Backend unavailable, using localStorage data');
+        useBackend = false;
+    }
 }
 
 function updateUI() {
