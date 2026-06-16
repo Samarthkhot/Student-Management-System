@@ -475,10 +475,11 @@ function addStudent() {
         return true;
     }
 
-    doAdd().then(() => {
+    doAdd().then((ok) => {
+        if (!ok) return;
         showToast(editId ? 'Student updated successfully' : 'Student added successfully', 'success');
         resetForm();
-        loadStudents();
+        if (useBackend) { loadStudents(); } else { currentPage = 1; selectedIds.clear(); updateUI(); }
         showTab('students');
     });
 }
@@ -542,7 +543,7 @@ async function deleteStudent(id) {
     }
     showToast('Student deleted', 'success');
     selectedIds.delete(id);
-    loadStudents();
+    if (useBackend) { loadStudents(); } else { updateUI(); }
 }
 
 function bulkDelete() {
@@ -565,7 +566,7 @@ function bulkDelete() {
             }
             selectedIds.clear();
             showToast('Students deleted successfully', 'success');
-            loadStudents();
+            if (useBackend) { loadStudents(); } else { updateUI(); }
         },
         'Confirm Bulk Deletion',
         'Delete All'
