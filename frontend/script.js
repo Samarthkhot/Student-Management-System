@@ -5,8 +5,80 @@ let sortField = null;
 let sortAsc = true;
 let selectedIds = new Set();
 let pendingCallback = null;
+let useBackend = true;
 
+const STORAGE_KEY = 'edupro_students';
 const API = '';
+
+/* ─── API ─── */
+async function apiGet(url) {
+    const r = await fetch(`${API}${url}`);
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+}
+
+async function apiPost(url, body) {
+    const r = await fetch(`${API}${url}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+}
+
+async function apiPut(url, body) {
+    const r = await fetch(`${API}${url}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+}
+
+async function apiDel(url) {
+    const r = await fetch(`${API}${url}`, { method: 'DELETE' });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+}
+
+/* ─── LOCAL STORAGE HELPERS ─── */
+function loadFromStorage() {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (data) {
+        studentsData = JSON.parse(data);
+    } else {
+        studentsData = getSeedData();
+        saveToStorage();
+    }
+}
+
+function saveToStorage() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(studentsData));
+}
+
+function getNextId() {
+    return studentsData.length > 0 ? Math.max(...studentsData.map(s => s.id)) + 1 : 1;
+}
+
+/* ─── SEED DATA ─── */
+function getSeedData() {
+    return [
+        { id: 1, name: 'Samarth Patil', email: 'samarth.patil@example.com', phone: '9876543210', course: 'Computer Science', gender: 'Male', dob: '2001-05-15', enrollmentDate: '2024-06-01', status: 'Active', address: '123 Main St, Pune', createdAt: '2024-06-01T10:00:00Z' },
+        { id: 2, name: 'Omkar Joshi', email: 'omkar.joshi@example.com', phone: '9876543211', course: 'Mechanical Engineering', gender: 'Male', dob: '2000-08-22', enrollmentDate: '2023-08-15', status: 'Active', address: '456 Oak Ave, Mumbai', createdAt: '2023-08-15T09:30:00Z' },
+        { id: 3, name: 'Ram Deshmukh', email: 'ram.deshmukh@example.com', phone: '9876543212', course: 'Electrical Engineering', gender: 'Male', dob: '2002-01-10', enrollmentDate: '2024-01-10', status: 'Graduated', address: '789 Pine Rd, Nagpur', createdAt: '2024-01-10T11:00:00Z' },
+        { id: 4, name: 'Sham Kulkarni', email: 'sham.kulkarni@example.com', phone: '9876543213', course: 'Business Administration', gender: 'Male', dob: '1999-11-30', enrollmentDate: '2022-07-01', status: 'Graduated', address: '321 Elm St, Nashik', createdAt: '2022-07-01T08:45:00Z' },
+        { id: 5, name: 'Ananya Sharma', email: 'ananya.sharma@example.com', phone: '9876543214', course: 'Computer Science', gender: 'Female', dob: '2001-03-18', enrollmentDate: '2024-06-01', status: 'Active', address: '234 Lake View, Pune', createdAt: '2024-06-01T10:15:00Z' },
+        { id: 6, name: 'Rohan Mehta', email: 'rohan.mehta@example.com', phone: '9876543215', course: 'Mechanical Engineering', gender: 'Male', dob: '2000-07-05', enrollmentDate: '2023-08-15', status: 'Inactive', address: '567 Hill Rd, Mumbai', createdAt: '2023-08-15T09:45:00Z' },
+        { id: 7, name: 'Priya Patel', email: 'priya.patel@example.com', phone: '9876543216', course: 'Electrical Engineering', gender: 'Female', dob: '2002-09-12', enrollmentDate: '2024-01-10', status: 'Active', address: '890 Valley Dr, Nagpur', createdAt: '2024-01-10T11:15:00Z' },
+        { id: 8, name: 'Amit Singh', email: 'amit.singh@example.com', phone: '9876543217', course: 'Business Administration', gender: 'Male', dob: '1999-12-25', enrollmentDate: '2022-07-01', status: 'Active', address: '432 River Ln, Nashik', createdAt: '2022-07-01T09:00:00Z' },
+        { id: 9, name: 'Neha Gupta', email: 'neha.gupta@example.com', phone: '9876543218', course: 'Computer Science', gender: 'Female', dob: '2001-06-14', enrollmentDate: '2024-06-01', status: 'Active', address: '111 Park St, Pune', createdAt: '2024-06-01T10:30:00Z' },
+        { id: 10, name: 'Vikas Yadav', email: 'vikas.yadav@example.com', phone: '9876543219', course: 'Mechanical Engineering', gender: 'Male', dob: '2000-04-20', enrollmentDate: '2023-08-15', status: 'Graduated', address: '222 Lake Rd, Mumbai', createdAt: '2023-08-15T10:00:00Z' },
+        { id: 11, name: 'Sneha Rao', email: 'sneha.rao@example.com', phone: '9876543220', course: 'Electrical Engineering', gender: 'Female', dob: '2002-02-28', enrollmentDate: '2024-01-10', status: 'Inactive', address: '333 Pine Ave, Nagpur', createdAt: '2024-01-10T11:30:00Z' },
+        { id: 12, name: 'Karan Verma', email: 'karan.verma@example.com', phone: '9876543221', course: 'Business Administration', gender: 'Male', dob: '1999-10-05', enrollmentDate: '2022-07-01', status: 'Active', address: '444 Oak St, Nashik', createdAt: '2022-07-01T09:15:00Z' },
+        { id: 13, name: 'Isha More', email: 'isha.more@example.com', phone: '9876543222', course: 'Computer Science', gender: 'Female', dob: '2001-11-08', enrollmentDate: '2024-06-01', status: 'Active', address: '555 Hill Top, Satara', createdAt: '2024-06-01T10:45:00Z' },
+        { id: 14, name: 'Siddharth Nair', email: 'siddharth.nair@example.com', phone: '9876543223', course: 'Data Science', gender: 'Male', dob: '2000-12-15', enrollmentDate: '2024-01-15', status: 'Active', address: '666 Lake View, Kolhapur', createdAt: '2024-01-15T09:00:00Z' },
+        { id: 15, name: 'Pooja Desai', email: 'pooja.desai@example.com', phone: '9876543224', course: 'Computer Science', gender: 'Female', dob: '2002-04-20', enrollmentDate: '2024-06-01', status: 'Active', address: '777 Green Park, Pune', createdAt: '2024-06-01T11:00:00Z' },
+        { id: 16, name: 'Rahul Sharma', email: 'rahul.sharma@example.com', phone: '9876543225', course: 'Civil Engineering', gender: 'Male', dob: '2000-02-14', enrollmentDate: '2023-08-15', status: 'Graduated', address: '888 River Side, Nashik', createdAt: '2023-08-15T10:15:00Z' },
+        { id: 17, name: 'Kavita Jadhav', email: 'kavita.jadhav@example.com', phone: '9876543226', course: 'Data Science', gender: 'Female', dob: '2001-09-03', enrollmentDate: '2024-01-15', status: 'Active', address: '999 Sunshine Ave, Mumbai', createdAt: '2024-01-15T09:30:00Z' },
+        { id: 18, name: 'Aditya Pawar', email: 'aditya.pawar@example.com', phone: '9876543227', course: 'Mechanical Engineering', gender: 'Male', dob: '2001-07-19', enrollmentDate: '2024-06-01', status: 'Inactive', address: '123 Maple Dr, Nagpur', createdAt: '2024-06-01T11:15:00Z' },
+        { id: 19, name: 'Sonal Gaikwad', email: 'sonal.gaikwad@example.com', phone: '9876543228', course: 'Business Administration', gender: 'Female', dob: '2000-05-25', enrollmentDate: '2022-07-01', status: 'Graduated', address: '456 Cedar Ln, Satara', createdAt: '2022-07-01T09:30:00Z' },
+        { id: 20, name: 'Tanmay Kulkarni', email: 'tanmay.kulkarni@example.com', phone: '9876543229', course: 'Electrical Engineering', gender: 'Male', dob: '2002-08-11', enrollmentDate: '2024-01-10', status: 'Active', address: '789 Birch St, Kolhapur', createdAt: '2024-01-10T12:00:00Z' }
+    ];
+}
 
 /* ─── SIDEBAR TOGGLE (mobile) ─── */
 function toggleSidebar() {
@@ -140,40 +212,31 @@ function getAvatarColor(name) {
     return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
-/* ─── API ─── */
-async function apiGet(url) {
-    const r = await fetch(`${API}${url}`);
-    if (!r.ok) throw new Error(await r.text());
-    return r.json();
-}
-
-async function apiPost(url, body) {
-    const r = await fetch(`${API}${url}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!r.ok) throw new Error(await r.text());
-    return r.json();
-}
-
-async function apiPut(url, body) {
-    const r = await fetch(`${API}${url}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!r.ok) throw new Error(await r.text());
-    return r.json();
-}
-
-async function apiDel(url) {
-    const r = await fetch(`${API}${url}`, { method: 'DELETE' });
-    if (!r.ok) throw new Error(await r.text());
-    return r.json();
-}
-
 /* ─── CORE DATA ─── */
 async function loadStudents() {
-    try {
-        studentsData = await apiGet('/students');
-        studentsData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
-    } catch (e) {
-        console.error('Failed to load students:', e);
-        showToast('Failed to load students from server', 'error');
-        studentsData = [];
+    if (useBackend) {
+        try {
+            studentsData = await apiGet('/students');
+            studentsData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
+            if (studentsData.length === 0) {
+                for (const s of getSeedData()) {
+                    await apiPost('/add-student', {
+                        name: s.name, email: s.email, phone: s.phone, course: s.course,
+                        gender: s.gender, dob: s.dob, enrollmentDate: s.enrollmentDate,
+                        status: s.status, address: s.address
+                    });
+                }
+                studentsData = await apiGet('/students');
+                studentsData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
+            }
+            saveToStorage();
+        } catch (e) {
+            console.warn('Backend unavailable, using localStorage');
+            useBackend = false;
+            loadFromStorage();
+        }
+    } else {
+        loadFromStorage();
     }
     currentPage = 1;
     selectedIds.clear();
@@ -357,7 +420,7 @@ function updateBulkDeleteBtn() {
 }
 
 /* ─── CRUD ─── */
-async function addStudent() {
+function addStudent() {
     const name = document.getElementById('name').value.trim();
     const email = document.getElementById('email').value.trim();
     const phone = document.getElementById('phone').value.trim();
@@ -381,20 +444,39 @@ async function addStudent() {
 
     const payload = { name, email, phone, course, gender, dob: dob || null, enrollmentDate: enrollmentDate || null, status, address };
 
-    try {
-        if (editId) {
-            await apiPut(`/update/${editId}`, payload);
-            showToast('Student updated successfully', 'success');
-        } else {
-            await apiPost('/add-student', payload);
-            showToast('Student added successfully', 'success');
+    async function doAdd() {
+        if (useBackend) {
+            try {
+                if (editId) {
+                    await apiPut(`/update/${editId}`, payload);
+                } else {
+                    const res = await apiPost('/add-student', payload);
+                    payload.id = res.id;
+                }
+            } catch (e) {
+                console.warn('Backend add failed, using localStorage');
+                useBackend = false;
+            }
         }
-        resetForm();
-        await loadStudents();
-        showTab('students');
-    } catch (e) {
-        showToast('Operation failed: ' + e.message, 'error');
+        if (editId) {
+            const idx = studentsData.findIndex(s => s.id === Number(editId));
+            if (idx !== -1) {
+                studentsData[idx] = { ...studentsData[idx], ...payload };
+            }
+        } else {
+            const newStudent = { id: payload.id || getNextId(), ...payload, createdAt: new Date().toISOString() };
+            studentsData.push(newStudent);
+        }
+        saveToStorage();
+        return true;
     }
+
+    doAdd().then(() => {
+        showToast(editId ? 'Student updated successfully' : 'Student added successfully', 'success');
+        resetForm();
+        loadStudents();
+        showTab('students');
+    });
 }
 
 function editStudent(id) {
@@ -442,30 +524,40 @@ function confirmDelete(id) {
 }
 
 async function deleteStudent(id) {
-    try {
-        await apiDel(`/delete/${id}`);
-        showToast('Student deleted', 'success');
-        selectedIds.delete(id);
-        await loadStudents();
-    } catch (e) {
-        showToast('Delete failed: ' + e.message, 'error');
+    if (useBackend) {
+        try {
+            await apiDel(`/delete/${id}`);
+        } catch (e) {
+            console.warn('Backend delete failed, using localStorage');
+            useBackend = false;
+        }
     }
+    studentsData = studentsData.filter(s => s.id !== id);
+    saveToStorage();
+    showToast('Student deleted', 'success');
+    selectedIds.delete(id);
+    loadStudents();
 }
 
-async function bulkDelete() {
+function bulkDelete() {
     if (selectedIds.size === 0) return;
     showModal(
         `Delete <strong>${selectedIds.size} student${selectedIds.size > 1 ? 's' : ''}</strong>? This cannot be undone.`,
         async () => {
-            try {
-                const ids = [...selectedIds];
-                await Promise.all(ids.map(id => apiDel(`/delete/${id}`)));
-                selectedIds.clear();
-                showToast('Students deleted successfully', 'success');
-                await loadStudents();
-            } catch (e) {
-                showToast('Bulk delete failed: ' + e.message, 'error');
+            const ids = [...selectedIds];
+            if (useBackend) {
+                try {
+                    await Promise.all(ids.map(id => apiDel(`/delete/${id}`)));
+                } catch (e) {
+                    console.warn('Backend bulk delete failed, using localStorage');
+                    useBackend = false;
+                }
             }
+            studentsData = studentsData.filter(s => !selectedIds.has(s.id));
+            saveToStorage();
+            selectedIds.clear();
+            showToast('Students deleted successfully', 'success');
+            loadStudents();
         },
         'Confirm Bulk Deletion',
         'Delete All'
