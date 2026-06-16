@@ -214,33 +214,33 @@ function getAvatarColor(name) {
 
 /* ─── CORE DATA ─── */
 async function loadStudents() {
-    loadFromStorage();
+    if (useBackend) {
+        try {
+            studentsData = await apiGet('/students');
+            studentsData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
+            if (studentsData.length === 0) {
+                for (const s of getSeedData()) {
+                    await apiPost('/add-student', {
+                        name: s.name, email: s.email, phone: s.phone, course: s.course,
+                        gender: s.gender, dob: s.dob, enrollmentDate: s.enrollmentDate,
+                        status: s.status, address: s.address
+                    });
+                }
+                studentsData = await apiGet('/students');
+                studentsData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
+            }
+            saveToStorage();
+        } catch (e) {
+            console.warn('Backend unavailable, showing demo data');
+            useBackend = false;
+            studentsData = getSeedData();
+        }
+    } else {
+        studentsData = getSeedData();
+    }
     currentPage = 1;
     selectedIds.clear();
     updateUI();
-
-    try {
-        const serverData = await apiGet('/students');
-        serverData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
-        if (serverData.length === 0) {
-            for (const s of getSeedData()) {
-                await apiPost('/add-student', {
-                    name: s.name, email: s.email, phone: s.phone, course: s.course,
-                    gender: s.gender, dob: s.dob, enrollmentDate: s.enrollmentDate,
-                    status: s.status, address: s.address
-                });
-            }
-            studentsData = await apiGet('/students');
-            studentsData.forEach(s => { if (s.id !== undefined) s.id = Number(s.id); });
-        } else {
-            studentsData = serverData;
-        }
-        saveToStorage();
-        updateUI();
-    } catch (e) {
-        console.warn('Backend unavailable, using localStorage data');
-        useBackend = false;
-    }
 }
 
 function updateUI() {
@@ -445,29 +445,33 @@ function addStudent() {
     const payload = { name, email, phone, course, gender, dob: dob || null, enrollmentDate: enrollmentDate || null, status, address };
 
     async function doAdd() {
-        if (useBackend) {
-            try {
-                if (editId) {
-                    await apiPut(`/update/${editId}`, payload);
-                } else {
-                    const res = await apiPost('/add-student', payload);
-                    payload.id = res.id;
-                }
-            } catch (e) {
-                console.warn('Backend add failed, using localStorage');
-                useBackend = false;
-            }
-        }
         if (editId) {
+            if (useBackend) {
+                try {
+                    await apiPut(`/update/${editId}`, payload);
+                } catch (e) {
+                    showToast('Backend update failed', 'error');
+                    return false;
+                }
+            }
             const idx = studentsData.findIndex(s => s.id === Number(editId));
             if (idx !== -1) {
                 studentsData[idx] = { ...studentsData[idx], ...payload };
             }
         } else {
-            const newStudent = { id: payload.id || getNextId(), ...payload, createdAt: new Date().toISOString() };
+            if (useBackend) {
+                try {
+                    const res = await apiPost('/add-student', payload);
+                    payload.id = res.id;
+                } catch (e) {
+                    showToast('Backend add failed', 'error');
+                    return false;
+                }
+            }
+            const newStudent = { id: useBackend ? payload.id : getNextId(), ...payload, createdAt: new Date().toISOString() };
             studentsData.push(newStudent);
         }
-        saveToStorage();
+        if (useBackend) saveToStorage();
         return true;
     }
 
@@ -527,13 +531,15 @@ async function deleteStudent(id) {
     if (useBackend) {
         try {
             await apiDel(`/delete/${id}`);
+            studentsData = studentsData.filter(s => s.id !== id);
+            saveToStorage();
         } catch (e) {
-            console.warn('Backend delete failed, using localStorage');
-            useBackend = false;
+            showToast('Backend delete failed', 'error');
+            return;
         }
+    } else {
+        studentsData = studentsData.filter(s => s.id !== id);
     }
-    studentsData = studentsData.filter(s => s.id !== id);
-    saveToStorage();
     showToast('Student deleted', 'success');
     selectedIds.delete(id);
     loadStudents();
@@ -548,13 +554,15 @@ function bulkDelete() {
             if (useBackend) {
                 try {
                     await Promise.all(ids.map(id => apiDel(`/delete/${id}`)));
+                    studentsData = studentsData.filter(s => !selectedIds.has(s.id));
+                    saveToStorage();
                 } catch (e) {
-                    console.warn('Backend bulk delete failed, using localStorage');
-                    useBackend = false;
+                    showToast('Backend bulk delete failed', 'error');
+                    return;
                 }
+            } else {
+                studentsData = studentsData.filter(s => !selectedIds.has(s.id));
             }
-            studentsData = studentsData.filter(s => !selectedIds.has(s.id));
-            saveToStorage();
             selectedIds.clear();
             showToast('Students deleted successfully', 'success');
             loadStudents();
